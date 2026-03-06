@@ -1,16 +1,8 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { createOctokit, listTeamMembers } from '@/lib/github';
 import { OctokitError } from '../../../types/github';
-import { verifySessionToken } from '@/lib/auth';
 
 export async function GET() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('session_token')?.value;
-  if (!token || !verifySessionToken(token)) {
-    return NextResponse.json({ error: '未授权访问' }, { status: 401 });
-  }
-
   const orgName = process.env.GITHUB_ORG_NAME;
   const teamName = process.env.GITHUB_TEAM_NAME;
 

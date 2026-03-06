@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import styles from './page.module.css';
-import PasscodeGate from './components/PasscodeGate';
 
 // Define interface for member objects
 interface Member {
@@ -13,11 +12,7 @@ interface Member {
 }
 
 export default function Home() {
-  return (
-    <PasscodeGate>
-      <WorkshopContent />
-    </PasscodeGate>
-  );
+  return <WorkshopContent />;
 }
 
 function WorkshopContent() {

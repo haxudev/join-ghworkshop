@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { createOctokit, inviteTeamMember, getTeamByName, listTeamMembers } from "@/lib/github";
-import { verifySessionToken } from "@/lib/auth";
 
 interface InviteRequestBody {
   username: string;
@@ -9,12 +7,6 @@ interface InviteRequestBody {
 
 export async function POST(request: Request) {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get('session_token')?.value;
-    if (!token || !verifySessionToken(token)) {
-      return NextResponse.json({ error: '未授权访问' }, { status: 401 });
-    }
-
     const body = await request.json() as InviteRequestBody;
     const { username } = body;
     
