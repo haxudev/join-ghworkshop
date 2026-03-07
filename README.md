@@ -27,9 +27,13 @@ npm install
 
 ```bash
 # GitHub API 配置
-GITHUB_AUTH_TOKEN=your_github_personal_access_token
+GITHUB_TOKEN=your_github_personal_access_token
 GITHUB_ORG_NAME=your_organization_name
 GITHUB_TEAM_NAME=your_team_name
+
+# 访问保护
+ACCESS_CODE=your_6_digit_access_code
+SESSION_SECRET=your_long_random_session_secret
 ```
 
 > 各变量的获取方式见下方 [环境变量详解](#环境变量详解)。
@@ -48,11 +52,13 @@ npm run dev
 
 | 变量名 | 必填 | 说明 |
 |---|:---:|---|
-| `GITHUB_AUTH_TOKEN` | 是 | GitHub 个人访问令牌（PAT） |
+| `GITHUB_TOKEN` | 是 | GitHub 个人访问令牌（PAT） |
 | `GITHUB_ORG_NAME` | 是 | GitHub 组织名称 |
 | `GITHUB_TEAM_NAME` | 是 | 组织中的团队 slug |
+| `ACCESS_CODE` | 是 | 工作坊访问码，仅在服务端读取，切勿使用 `NEXT_PUBLIC_` 前缀 |
+| `SESSION_SECRET` | 建议 | 会话签名密钥，建议使用长度 32 位以上随机字符串 |
 
-### `GITHUB_AUTH_TOKEN` — 个人访问令牌
+### `GITHUB_TOKEN` — 个人访问令牌
 
 用于调用 GitHub API 管理组织成员和团队。
 
@@ -114,15 +120,43 @@ npm run dev
 ```bash
 docker build -t join-ghworkshop .
 docker run -p 3000:3000 \
-  -e GITHUB_AUTH_TOKEN=xxx \
+   -e GITHUB_TOKEN=xxx \
   -e GITHUB_ORG_NAME=xxx \
   -e GITHUB_TEAM_NAME=xxx \
   join-ghworkshop
 ```
 
+### Azure App Service
+
+如果部署到 Azure Web App / App Service，请在应用设置中配置以下变量：
+
+```bash
+GITHUB_TOKEN=xxx
+GITHUB_ORG_NAME=xxx
+GITHUB_TEAM_NAME=xxx
+ACCESS_CODE=your_6_digit_access_code
+SESSION_SECRET=generate_a_long_random_string_here
+```
+
 ### Azure 静态 Web 应用
 
 项目已配置 GitHub Actions 工作流，推送代码后可自动部署到 Azure Static Web Apps。
+
+部署时请在 Azure Static Web Apps 的应用设置中配置以下变量：
+
+```bash
+GITHUB_TOKEN=xxx
+GITHUB_ORG_NAME=xxx
+GITHUB_TEAM_NAME=xxx
+ACCESS_CODE=your_6_digit_access_code
+SESSION_SECRET=generate_a_long_random_string_here
+```
+
+说明：
+
+1. `ACCESS_CODE` 只在服务端校验，前端不会拿到该值。
+2. `SESSION_SECRET` 用于给 `httpOnly` 会话 Cookie 签名，避免固定 Token 被重放。
+3. 不要把访问码写进代码库，也不要使用 `NEXT_PUBLIC_ACCESS_CODE` 这类前缀。
 
 ### Azure 容器注册表 (ACR)
 

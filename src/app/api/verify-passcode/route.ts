@@ -1,5 +1,11 @@
 import { NextResponse } from 'next/server';
-import { verifyPasscode, generateSessionToken } from '@/lib/auth';
+import {
+  SESSION_COOKIE_NAME,
+  SESSION_DURATION_SECONDS,
+  generateSessionToken,
+  isAccessCodeConfigured,
+  verifyPasscode,
+} from '@/lib/auth';
 
 interface VerifyRequestBody {
   passcode: string;
@@ -14,7 +20,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: '请输入访问码' }, { status: 400 });
     }
 
-    if (!process.env.ACCESS_CODE) {
+    if (!isAccessCodeConfigured()) {
       return NextResponse.json({ error: '服务端未配置访问码' }, { status: 500 });
     }
 
@@ -25,13 +31,14 @@ export async function POST(request: Request) {
     const token = generateSessionToken();
     const response = NextResponse.json({ success: true });
 
-    response.cookies.set('session_token', token, {
+    response.cookies.set(SESSION_COOKIE_NAME, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       path: '/',
-      maxAge: 60 * 60 * 24, // 24 hours
+      maxAge: SESSION_DURATION_SECONDS,
     });
+    response.headers.set('Cache-Control', 'no-store');
 
     return response;
   } catch {

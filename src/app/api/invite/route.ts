@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { hasValidSession } from '@/lib/auth';
 import { createOctokit, inviteTeamMember, getTeamByName, listTeamMembers } from "@/lib/github";
 
 interface InviteRequestBody {
@@ -6,6 +7,10 @@ interface InviteRequestBody {
 }
 
 export async function POST(request: Request) {
+  if (!(await hasValidSession())) {
+    return NextResponse.json({ error: '未授权访问' }, { status: 401 });
+  }
+
   try {
     const body = await request.json() as InviteRequestBody;
     const { username } = body;

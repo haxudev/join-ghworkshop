@@ -6,10 +6,20 @@ import {
   GitHubSeatAssignment 
 } from '../types/github';
 
+function getGitHubToken(): string {
+  const token = process.env.GITHUB_TOKEN?.trim();
+
+  if (!token) {
+    throw new Error('缺少环境变量 GITHUB_TOKEN');
+  }
+
+  return token;
+}
+
 // Create and configure Octokit instance
 export function createOctokit() {
   return new Octokit({
-    auth: process.env.GITHUB_TOKEN
+    auth: getGitHubToken()
   });
 }
 

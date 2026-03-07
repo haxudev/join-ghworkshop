@@ -1,5 +1,14 @@
 import { NextResponse } from 'next/server';
+import { hasValidSession } from '@/lib/auth';
 
 export async function GET() {
-  return NextResponse.json({ authenticated: true });
+  const authenticated = await hasValidSession();
+
+  return NextResponse.json(
+    { authenticated },
+    {
+      status: authenticated ? 200 : 401,
+      headers: { 'Cache-Control': 'no-store' },
+    }
+  );
 }

@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
 import { createOctokit, listTeamMembers } from '@/lib/github';
+import { hasValidSession } from '@/lib/auth';
 import { OctokitError } from '../../../types/github';
 
 export async function GET() {
+  if (!(await hasValidSession())) {
+    return NextResponse.json({ error: '未授权访问' }, { status: 401 });
+  }
+
   const orgName = process.env.GITHUB_ORG_NAME;
   const teamName = process.env.GITHUB_TEAM_NAME;
 
