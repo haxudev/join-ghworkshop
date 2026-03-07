@@ -6,6 +6,38 @@ import {
   GitHubSeatAssignment 
 } from '../types/github';
 
+function getOctokitResponseMessage(data: unknown): string | null {
+  if (typeof data === 'string' && data.trim()) {
+    return data;
+  }
+
+  if (data && typeof data === 'object') {
+    const message = Reflect.get(data, 'message');
+    if (typeof message === 'string' && message.trim()) {
+      return message;
+    }
+  }
+
+  return null;
+}
+
+export function getErrorMessage(error: unknown, fallback = 'Unknown error'): string {
+  if (error instanceof Error) {
+    const responseMessage = getOctokitResponseMessage(
+      (error as OctokitError).response?.data
+    );
+
+    if (responseMessage) {
+      return responseMessage;
+    }
+
+    return error.message || fallback;
+  }
+
+  const responseMessage = getOctokitResponseMessage(error);
+  return responseMessage || fallback;
+}
+
 function getGitHubToken(): string {
   const token = process.env.GITHUB_TOKEN?.trim();
 
@@ -36,9 +68,7 @@ export async function listTeamMembers(octokit: Octokit, org: string, team: strin
     });
     return response.data as GitHubTeamMember[];
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? 
-      (error as OctokitError).response?.data || error.message : 
-      'Unknown error';
+    const errorMessage = getErrorMessage(error);
     console.error('获取团队成员失败:', errorMessage);
     throw error;
   }
@@ -59,9 +89,7 @@ export async function inviteTeamMember(octokit: Octokit, orgName: string, teamNa
     console.log('成功邀请团队成员:', response.data);
     return response.data;
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? 
-      (error as OctokitError).response?.data || error.message : 
-      'Unknown error';
+    const errorMessage = getErrorMessage(error);
     console.error('邀请团队成员失败:', errorMessage);
     throw error;
   }
@@ -81,9 +109,7 @@ export async function getTeamByName(octokit: Octokit, orgName: string, teamName:
     
     return team;
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? 
-      (error as OctokitError).response?.data || error.message : 
-      'Unknown error';
+    const errorMessage = getErrorMessage(error);
     console.error('获取团队信息失败:', errorMessage);
     throw error;
   }
@@ -100,9 +126,7 @@ export async function listAssignedSeats(octokit: Octokit, orgName: string): Prom
     });
     return response.data as GitHubSeatAssignment;
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? 
-      (error as OctokitError).response?.data || error.message : 
-      'Unknown error';
+    const errorMessage = getErrorMessage(error);
     console.error('获取席位分配失败:', errorMessage);
     throw error;
   }

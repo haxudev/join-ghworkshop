@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { hasValidSession } from '@/lib/auth';
-import { createOctokit, inviteTeamMember, getTeamByName, listTeamMembers } from "@/lib/github";
+import { createOctokit, getErrorMessage, inviteTeamMember, getTeamByName, listTeamMembers } from "@/lib/github";
 
 interface InviteRequestBody {
   username: string;
@@ -39,10 +39,7 @@ export async function POST(request: Request) {
         await inviteTeamMember(octokit, orgName, team.slug, username);
       } catch (error: unknown) {
         console.error("邀请用户失败:", error);
-        let errorMessage = '邀请用户失败';
-        if ((error as any).response?.data?.message) {
-          errorMessage = (error as any).response.data.message;
-        }
+        const errorMessage = getErrorMessage(error, '邀请用户失败');
         return NextResponse.json({ error: errorMessage }, { status: 500 });
       }
 
@@ -62,12 +59,7 @@ export async function POST(request: Request) {
 
     } catch (error: unknown) {
       console.error("GitHub API 错误:", error);
-      let errorMessage = '操作失败';
-      if ((error as any).response?.data?.message) {
-        errorMessage = (error as any).response.data.message;
-      } else if ((error as any).message) {
-        errorMessage = (error as any).message;
-      }
+      const errorMessage = getErrorMessage(error, '操作失败');
       return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
   } catch (error) {

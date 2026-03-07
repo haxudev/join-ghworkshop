@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { createOctokit, listTeamMembers } from '@/lib/github';
+import { createOctokit, getErrorMessage, listTeamMembers } from '@/lib/github';
 import { hasValidSession } from '@/lib/auth';
-import { OctokitError } from '../../../types/github';
 
 export async function GET() {
   if (!(await hasValidSession())) {
@@ -23,9 +22,7 @@ export async function GET() {
     const members = await listTeamMembers(octokit, orgName, teamName);
     return NextResponse.json(members);
   } catch (error: unknown) {
-  const errorMessage = error instanceof Error ? 
-      (error as OctokitError).response?.data || error.message : 
-      'Unknown error';
+    const errorMessage = getErrorMessage(error, '获取团队成员列表失败');
     console.error('获取团队成员列表失败:', errorMessage);
     return NextResponse.json(
       { error: errorMessage },

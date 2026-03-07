@@ -9,6 +9,31 @@ interface Member {
   login: string;
 }
 
+function getApiErrorMessage(value: unknown, fallback: string): string {
+  if (typeof value === 'string' && value.trim()) {
+    return value;
+  }
+
+  if (value && typeof value === 'object') {
+    const message = Reflect.get(value, 'message');
+    if (typeof message === 'string' && message.trim()) {
+      return message;
+    }
+  }
+
+  return fallback;
+}
+
+function isMember(value: unknown): value is Member {
+  return (
+    !!value &&
+    typeof value === 'object' &&
+    (typeof Reflect.get(value, 'id') === 'string' ||
+      typeof Reflect.get(value, 'id') === 'number') &&
+    typeof Reflect.get(value, 'login') === 'string'
+  );
+}
+
 export default function WorkshopContent() {
   const [members, setMembers] = useState<Member[]>([]);
   const [username, setUsername] = useState('');
@@ -36,8 +61,19 @@ export default function WorkshopContent() {
   async function fetchConfig() {
     try {
       const response = await fetch('/api/config', { cache: 'no-store' });
-      const data = await response.json();
-      setConfig(data);
+      const data = (await response.json().catch(() => null)) as
+        | { orgName?: unknown; teamName?: unknown; error?: unknown }
+        | null;
+
+      if (!response.ok) {
+        setMessage(getApiErrorMessage(data?.error, '获取配置信息失败'));
+        return;
+      }
+
+      setConfig({
+        orgName: typeof data?.orgName === 'string' ? data.orgName : '',
+        teamName: typeof data?.teamName === 'string' ? data.teamName : '',
+      });
     } catch {
       setMessage('获取配置信息失败');
     }
@@ -46,15 +82,18 @@ export default function WorkshopContent() {
   async function fetchMembers() {
     try {
       const response = await fetch('/api/members', { cache: 'no-store' });
-      const data = await response.json();
+      const data = (await response.json().catch(() => null)) as
+        | Member[]
+        | { error?: unknown }
+        | null;
 
-      if (Array.isArray(data)) {
-        setMembers(data as Member[]);
+      if (Array.isArray(data) && data.every(isMember)) {
+        setMembers(data);
         return;
       }
 
-      if (data.error) {
-        setMessage(data.error);
+      if (data && typeof data === 'object' && 'error' in data) {
+        setMessage(getApiErrorMessage(data.error, '获取成员列表失败'));
         return;
       }
 
@@ -83,13 +122,16 @@ export default function WorkshopContent() {
         cache: 'no-store',
       });
 
-      const data = await response.json();
-      if (data.success) {
+      const data = (await response.json().catch(() => null)) as
+        | { success?: unknown; error?: unknown }
+        | null;
+
+      if (response.ok && data?.success === true) {
         setMessage(`成功为 ${username} 发送邀请, 接下来请进入您的 GitHub 组织页面接受邀请。`);
         setUsername('');
         void fetchMembers();
       } else {
-        setMessage(data.error || '邀请失败');
+        setMessage(getApiErrorMessage(data?.error, '邀请失败'));
       }
     } catch {
       setMessage('邀请过程中发生错误');
@@ -101,6 +143,7 @@ export default function WorkshopContent() {
   const filteredMembers = filterText
     ? members.filter((member) => member.login.toLowerCase().includes(filterText.toLowerCase()))
     : members;
+  const isSuccessMessage = message.includes('成功');
 
   return (
     <main className={styles.main}>
@@ -233,8 +276,8 @@ export default function WorkshopContent() {
                 </form>
 
                 {message && (
-                  <div className={`${styles.message} ${message.includes('成功') ? styles.success : styles.error}`}>
-                    {message.includes('成功') ? '✅ ' : '⚠️ '}
+                  <div className={`${styles.message} ${isSuccessMessage ? styles.success : styles.error}`}>
+                    {isSuccessMessage ? '✅ ' : '⚠️ '}
                     {message}
                   </div>
                 )}
