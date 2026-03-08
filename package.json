@@ -6,7 +6,9 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "deploy:swa": "gh auth status && git push origin master",
+    "redeploy:swa": "gh workflow run azure-static-web-apps.yml --ref master"
   },
   "dependencies": {
     "@octokit/core": "^6.1.4",

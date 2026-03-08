@@ -115,52 +115,83 @@ npm run dev
 
 ## 部署
 
-### Docker
+### Azure Static Web Apps
+
+本项目现在只保留一条生产部署链路：
+
+- 生产站点：`joinworkshop.haxu.dev`
+- Azure 资源：Static Web App `joinworkshop`
+- 发布方式：推送到 `master` 后，由 GitHub Actions 自动发布到 SWA
+
+#### 1. 一次性准备 Git 推送凭据
 
 ```bash
-docker build -t join-ghworkshop .
-docker run -p 3000:3000 \
-   -e GITHUB_TOKEN=xxx \
-  -e GITHUB_ORG_NAME=xxx \
-  -e GITHUB_TEAM_NAME=xxx \
-  join-ghworkshop
+gh auth status
+gh auth setup-git
 ```
 
-### Azure App Service
+如果 `gh auth status` 显示未登录，先执行 `gh auth login`。
 
-如果部署到 Azure Web App / App Service，请在应用设置中配置以下变量：
+#### 2. 配置 SWA 运行时环境变量
+
+代码里的服务端 API 运行在 SWA 的托管后端里，所以要把运行时变量配置到 SWA 本身，而不是 App Service。
 
 ```bash
-GITHUB_TOKEN=xxx
-GITHUB_ORG_NAME=xxx
-GITHUB_TEAM_NAME=xxx
-ACCESS_CODE=your_6_digit_access_code
-SESSION_SECRET=generate_a_long_random_string_here
+az staticwebapp appsettings set \
+   --name joinworkshop \
+   --resource-group haxuapps \
+   --setting-names \
+      GITHUB_TOKEN=xxx \
+      GITHUB_ORG_NAME=xxx \
+      GITHUB_TEAM_NAME=xxx \
+      ACCESS_CODE=your_6_digit_access_code \
+      SESSION_SECRET=generate_a_long_random_string_here
 ```
 
-### Azure 静态 Web 应用
+#### 3. 发布最新代码到生产
 
-项目已配置 GitHub Actions 工作流，推送代码后可自动部署到 Azure Static Web Apps。
-
-部署时请在 Azure Static Web Apps 的应用设置中配置以下变量：
+提交代码后，直接推送到 `master`：
 
 ```bash
-GITHUB_TOKEN=xxx
-GITHUB_ORG_NAME=xxx
-GITHUB_TEAM_NAME=xxx
-ACCESS_CODE=your_6_digit_access_code
-SESSION_SECRET=generate_a_long_random_string_here
+npm run deploy:swa
 ```
+
+这个脚本本质上执行的是：
+
+```bash
+git push origin master
+```
+
+#### 4. 无代码变更时重发当前生产版本
+
+如果只是修改了 SWA 应用设置，或者想重新触发一次发布，不需要制造空提交：
+
+```bash
+npm run redeploy:swa
+```
+
+这会手动触发 [azure-static-web-apps.yml](.github/workflows/azure-static-web-apps.yml)。
+
+#### 5. 部署约束
+
+- 不再使用本地 `.azure-deploy/` App Service 打包目录。
+- 不再使用 Azure App Service 作为 `joinworkshop.haxu.dev` 的生产发布目标。
+- `joinworkshop.haxu.dev` 的运行时配置只在 SWA 上维护。
 
 说明：
 
 1. `ACCESS_CODE` 只在服务端校验，前端不会拿到该值。
 2. `SESSION_SECRET` 用于给 `httpOnly` 会话 Cookie 签名，避免固定 Token 被重放。
 3. 不要把访问码写进代码库，也不要使用 `NEXT_PUBLIC_ACCESS_CODE` 这类前缀。
+4. 本地 `.env` 只用于开发和临时排障，不参与生产部署。
 
-### Azure 容器注册表 (ACR)
+### 本地开发
 
-项目已配置 GitHub Actions 工作流，可自动构建并推送 Docker 镜像到 ACR。
+本地开发仍然直接运行 Next.js：
+
+```bash
+npm run dev
+```
 
 ---
 
