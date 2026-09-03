@@ -211,3 +211,6 @@ npm run dev
 
 - [Next.js 文档](https://nextjs.org/docs) — 功能与 API 参考
 - [学习 Next.js](https://nextjs.org/learn) — 交互式教程
+
+
+<!-- Security scan triggered at 2026-09-03 23:14:12 -->
